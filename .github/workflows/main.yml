@@ -1,0 +1,46 @@
+# Build and deploy an Angular app to GitHub Pages
+on:
+  push:
+    branches:
+      - main   # change to 'master' if your default branch is master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Use npm cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular (production)
+        # Pass --base-href if your site will be served from https://<user>.github.io/<repo>/
+        # The trailing args are forwarded to `ng build` by npm.
+        run: npm run build -- --configuration production --base-href /TalentAI/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./dist/<PROJECT_NAME>
